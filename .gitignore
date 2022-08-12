@@ -1,129 +1,86 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
+#Find imports for longitude and latitude. As well as website use.
+from geopy.geocoders import Nominatim
+import requests
+import gtts
+from playsound import playsound
 
-# C extensions
-*.so
+#First ask the user for the longitude and latitude of an address.
+geolocator = Nominatim(user_agent="my_thing")
+location = geolocator.geocode('758 Orlando Avenue Akron Ohio')
+lat = str(location.latitude)
+lon = str(location.longitude)
 
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-pip-wheel-metadata/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+#Second take the longitude and latitude numbers to insert into a webcode and store that information into a dictionary.
+grid_website = 'https://api.weather.gov/points/' + lat +',' + lon
+response_grid = requests.get(grid_website)
+return_grid_points = response_grid.json()
 
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
+#Third take the properties key from the dictionary return_grid and make it into its own dictionary. From there make grid id, x-coordinate, and y-coordinate values into three seperate variables
+properties_grid = return_grid_points['properties']
+grid_id = properties_grid["gridId"]
+grid_x = str(properties_grid["gridX"])
+grid_y = str(properties_grid["gridY"])
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+#Fourth make  weekly function to store all weekly forecast code.
+def weekly_function():
+    #Fifth use the grid_id, grid_x, and grid_y to insert into webcode to get the weekly forecast data. Store weekly forecast data into a dictionary.
+    weekly_forecast_website = 'https://api.weather.gov/gridpoints/' + grid_id + "/" + grid_x + "," + grid_y + "/forecast"
+    weekly_response_forecast = requests.get(weekly_forecast_website)
+    weekly_return_points = weekly_response_forecast.json()
+    weekly_properties = weekly_return_points['properties']
+    weekly_forecast = weekly_properties['periods']
 
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
+    #Sixth format the dictionary of weekly_forcast to print only thee date name, times, and detailed forecast.
+    for a in weekly_forecast:
+        for key in ['number', 'isDaytime', 'temperature', 'temperatureUnit', 'temperatureTrend', 'windSpeed', 'windDirection', 'icon','shortForecast']:
+            del a[key]
 
-# Translations
-*.mo
-*.pot
+    #Seventh use if statements to only print till the end of the week no matter what day it is.
+    index = str([i for i, d in enumerate(weekly_forecast) if 'Saturday Night' in d.values()])
+    index = int(index.strip("[]"))
+    i = 0
+    while i<=index:
+        print(weekly_forecast[i])
+        print("\n")
+        i += 1
+                 
+    #Eighth ask the user if they want next weeks data. If so then print it from Sunday to Saturday.
+    user_more_data = input("Would you like more data for the days after this week? Yes or no:")
+    if user_more_data == 'yes':
+        stop = len(weekly_forecast)
+        stop = stop-1
+        i = index
+        while i<=stop:
+            print(weekly_forecast[i])
+            print("\n")
+            i += 1
+    else:
+        print("Thats all for the forecast today folks. Have a wonderful day!")
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
+#Ninth make an hourly function to store the hourly forecast data.
+def hourly_function():
+    #Tenth follow step number four, but to obtain hourly forecast data. Store hourly forecast data into a dictionary.
+    hourly_forecast_website = 'https://api.weather.gov/gridpoints/' + grid_id + "/" + grid_x + "," + grid_y + "/forecast/hourly"
+    hourly_response_forecast = requests.get(hourly_forecast_website)
+    hourly_return_points = hourly_response_forecast.json()
+    hourly_properties= hourly_return_points['properties']
+    hourly_forecast = hourly_properties['periods']
 
-# Flask stuff:
-instance/
-.webassets-cache
+    #Eleventh format hourly_forcast to not print keys that do not have info and the website.
+    for b in hourly_forecast:
+        for key in ['number', 'name', 'isDaytime', 'temperatureTrend', 'icon', 'detailedForecast']:
+            del b[key]
+            
+    #Twelfth print only the hourly times for the day and not the next. The only update that is the acception is th midnight time.
+    original_data = hourly_properties['updateTime']
+    
 
-# Scrapy stuff:
-.scrapy
+#Thirteenth create an if statement that asks the user if they want the weekly or hourly data.
+user_which_one = input("Would you like weekly or hourly data? Please answer by typing 'weekly' or 'hourly' and pressing enter:")
+if user_which_one == 'weekly':
+    weekly_function()
+elif user_which_one == 'hourly':
+    hourly_function()
+else:
+    ("Sorry that was not a valid entry option.")
 
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-.python-version
-
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-#Pipfile.lock
-
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow
-__pypackages__/
-
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
